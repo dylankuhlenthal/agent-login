@@ -20,6 +20,10 @@ class UsageError extends Error {}
 async function main(args: string[]): Promise<number> {
   guardProcessOutput();
   try {
+    if (args.length === 1 && (args[0] === '--help' || args[0] === '-h')) {
+      process.stdout.write(`${USAGE}\n`);
+      return 0;
+    }
     if (args[0] === 'setup') return await setup(args.slice(1));
     if (args[0] === 'add-site') return await addSite(args.slice(1));
     if (args.length !== 1 || args[0].startsWith('-')) throw new UsageError();
