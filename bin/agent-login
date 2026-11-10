@@ -1,5 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
-here="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
+root="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
+# A clone runs its TypeScript source. An installed package has no src/, and Node will not
+# strip types under node_modules, so it runs the build that npm made when it was installed.
+if [ -f "$root/src/cli.ts" ]; then
+  entry="$root/src/cli.ts"
+elif [ -f "$root/dist/cli.js" ]; then
+  entry="$root/dist/cli.js"
+else
+  echo "agent-login: $root has neither src/ nor a build in dist/; reinstall it" >&2
+  exit 1
+fi
 # Playwright's debug logging prints the values it types, including the password.
-exec env -u DEBUG -u PWDEBUG -u DEBUG_FILE node "$here/../src/cli.ts" "$@"
+exec env -u DEBUG -u PWDEBUG -u DEBUG_FILE node "$entry" "$@"
