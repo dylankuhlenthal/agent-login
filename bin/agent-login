@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+here="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
+# Playwright's debug logging prints the values it types, including the password.
+exec env -u DEBUG -u PWDEBUG -u DEBUG_FILE node "$here/../src/cli.ts" "$@"
