@@ -68,9 +68,25 @@ test('a token 1Password rejects fails the lookup without printing the token', as
   assert.ok(!(result.stdout + result.stderr).includes(FAKE_TOKEN));
 });
 
+test('--help prints usage on stdout and succeeds', () => {
+  for (const flag of ['--help', '-h']) {
+    const result = run(flag);
+    assert.equal(result.status, 0);
+    assert.match(result.stdout, /^usage:/);
+  }
+});
+
+test('a clone on a Node that cannot strip types runs the build instead', () => {
+  const build = spawnSync('npm', ['run', 'build'], { cwd: join(dirname(BIN), '..'), encoding: 'utf8' });
+  assert.equal(build.status, 0, build.stderr);
+  const result = runWith({ NODE_OPTIONS: '--no-experimental-strip-types' }, '--help');
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /^usage:/);
+});
+
 test('anything other than one account key prints usage', () => {
   assert.equal(run().status, 64);
-  assert.equal(run('--help').status, 64);
+  assert.equal(run('--verbose').status, 64);
   assert.equal(run(ACCOUNT, 'extra').status, 64);
 });
 

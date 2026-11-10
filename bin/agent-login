@@ -1,5 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
-here="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
+root="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
+# A clone runs its TypeScript source when this Node strips types (22.18 and later), and its
+# build otherwise. An installed package has no src/, and Node will not strip types under
+# node_modules, so it runs the build that npm made when it was installed.
+if [ -f "$root/src/cli.ts" ] && node -e 'process.exit(process.features.typescript ? 0 : 1)'; then
+  entry="$root/src/cli.ts"
+elif [ -f "$root/dist/cli.js" ]; then
+  entry="$root/dist/cli.js"
+else
+  echo "agent-login: no build in $root/dist and this Node ($(node --version)) cannot run the source;" \
+    "run npm install in $root, or use Node 22.18 or later" >&2
+  exit 1
+fi
 # Playwright's debug logging prints the values it types, including the password.
-exec env -u DEBUG -u PWDEBUG -u DEBUG_FILE node "$here/../src/cli.ts" "$@"
+exec env -u DEBUG -u PWDEBUG -u DEBUG_FILE node "$entry" "$@"

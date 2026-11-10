@@ -66,7 +66,7 @@ Each user brings their own 1Password service account and vault. Several agents o
 
 Needs:
 
-- Node 24 or later
+- Node 22 or later (22.18 or later to run it from a clone, see below)
 - Google Chrome, installed the normal way (on Linux, `/opt/google/chrome/chrome`)
 - the [1Password CLI](https://developer.1password.com/docs/cli/get-started/) (`op`) on the `PATH`
 
@@ -77,7 +77,9 @@ npm install
 ln -s "$PWD/bin/agent-login" ~/.local/bin/agent-login   # any folder on your PATH
 ```
 
-It runs the TypeScript source directly with Node's built-in type stripping, so there is no build step. Node does not strip types inside `node_modules`, so install it from a clone like this, not with `npm install -g`.
+From a clone, `bin/agent-login` runs the TypeScript source directly with Node's built-in type stripping (on by default from Node 22.18), so after a `git pull` there is nothing to rebuild.
+
+Installed as a package instead (for example as a dependency of another project), it has no `src/`, and Node does not strip types inside `node_modules` anyway. There `bin/agent-login` runs the JavaScript build in `dist/`, which npm makes with `npm run build` (the `prepare` script) when it installs the package, including straight from this GitHub repo. [Sous chef](https://github.com/dylankuhlenthal/sous-chef) installs it this way.
 
 To install the 1Password CLI for one user without root on Linux: download the zip from 1Password's [CLI downloads](https://app-updates.agilebits.com/product_history/CLI2), check its signature (`gpg --verify op.sig op` against 1Password's key `3FEF9748469ADBE15DA7CA80AC2D62742012EA22`), then copy `op` to `~/.local/bin/op`.
 
@@ -212,7 +214,7 @@ See [Errors](#errors) for every code.
 
 [`skills/agent-login/SKILL.md`](skills/agent-login/SKILL.md) tells an agent how to use the tool: how to find the account key, sign in, read the site notes first, open the profile, clean up, and add to the notes afterwards, plus what it must never do (look for the password, change settings, retry a failed sign-in).
 
-To give it to Claude Code, link it into your skills folder:
+To give it to Claude Code, link it into your skills folder (sous chef's setup does this for you):
 
 ```bash
 ln -s "$PWD/skills/agent-login" ~/.claude/skills/agent-login
@@ -331,6 +333,8 @@ The sign-in tests use fake sites served on 127.0.0.1, reached under `*.localhost
 - a wrong password, tried once only
 - landing on a sibling subdomain after signing in
 - every sign-in refusal in the table above except `UNKNOWN_ACCOUNT` and `PASSWORD_IN_PROFILE`, including a sibling subdomain as the login page and a look-alike host after signing in
+
+`test/package.test.ts` packs the package with `npm pack` (which builds it), unpacks it under a `node_modules` folder the way npm installs a dependency, and checks it holds the build, the launcher and the skill but no source, and that its launcher runs the build.
 
 Other tests cover loading settings (no vault, environment variables beating the config file, paths), `setup` (each check, with a stand-in `op` that only accepts a fake token, and that the token is never printed) and `add-site`.
 
